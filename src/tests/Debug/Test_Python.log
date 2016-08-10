@@ -1,0 +1,21 @@
+﻿Build started 03/05/2016 13:34:56.
+     1>Project "C:\Anderson\Pessoal\01_Doutorado\3_Codigos\Test_Python\Test_Python\Test_Python.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D TEST_PYTHON_EXPORTS /D _WINDLL /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"Debug\Test_Python.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt stdafx.cpp
+         stdafx.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D TEST_PYTHON_EXPORTS /D _WINDLL /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt dllmain.cpp
+         dllmain.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D TEST_PYTHON_EXPORTS /D _WINDLL /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\Test_Python.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Test_Python.cpp
+         Test_Python.cpp
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Anderson\Pessoal\01_Doutorado\3_Codigos\Test_Python\Debug\Test_Python.dll" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Anderson\Pessoal\01_Doutorado\3_Codigos\Test_Python\Debug\Test_Python.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Anderson\Pessoal\01_Doutorado\3_Codigos\Test_Python\Debug\Test_Python.lib" /MACHINE:X86 /DLL Debug\dllmain.obj
+         Debug\stdafx.obj
+         Debug\Test_Python.obj
+     1>Test_Python.obj : error LNK2005: _DllMain@12 already defined in dllmain.obj
+            Creating library C:\Anderson\Pessoal\01_Doutorado\3_Codigos\Test_Python\Debug\Test_Python.lib and object C:\Anderson\Pessoal\01_Doutorado\3_Codigos\Test_Python\Debug\Test_Python.exp
+     1>C:\Anderson\Pessoal\01_Doutorado\3_Codigos\Test_Python\Debug\Test_Python.dll : fatal error LNK1169: one or more multiply defined symbols found
+     1>Done Building Project "C:\Anderson\Pessoal\01_Doutorado\3_Codigos\Test_Python\Test_Python\Test_Python.vcxproj" (Build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:00.85
