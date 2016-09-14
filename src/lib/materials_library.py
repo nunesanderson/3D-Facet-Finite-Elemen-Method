@@ -24,7 +24,7 @@ def get_materials_lib():
         'Aluminum':MaterialProp(Permitivity=1.0, Conductivity=34.0 * math.pow(10, 6), Permeability=1.0,Hc=Hc_zero),
         'Air':MaterialProp(Permitivity=1.0, Conductivity=0.0 * math.pow(10, 6), Permeability=1.0,Hc=Hc_zero),
         'Air_Hc':MaterialProp(Permitivity=1.0, Conductivity=0.0 * math.pow(10, 6), Permeability=1.0,Hc=Hc_test_air),
-        'Iron':MaterialProp(Permitivity=1.0, Conductivity=0.0 * math.pow(10.0, 6.0), Permeability=2000.0,Hc=Hc_zero),
+        'Iron':MaterialProp(Permitivity=1.0, Conductivity=0.0 * math.pow(10.0, 6.0), Permeability=1.0,Hc=Hc_zero),
         'MDSteel':MaterialProp(Permitivity=1.0, Conductivity=5.0 * math.pow(10, 6), Permeability=300.0,Hc=Hc_zero),
         'NdFe35':MaterialProp(Permitivity=1.0, Conductivity=0.0 * math.pow(10, 6), Permeability=1.0997785406,Hc=Hc_NdFe35)
         }

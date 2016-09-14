@@ -6,6 +6,7 @@ import numpy as np
 from RNMFEM.structs import Face,File_names
 from materials_library import get_materials_lib
 from RNMFEM import Biot_Savart,Post_Gmsh
+from RNMFEM.Post_Gmsh import Create_Vector_field
 from lib.read_write_TXT_files import  get_Field_solution
 from main.RNMFEM import permanent_magnets
 from lib.constants import Vacuum,GlobalVariables
@@ -17,7 +18,7 @@ from scipy import sparse
 from scipy.sparse import csr_matrix
 import scipy.sparse.linalg as splinalg
 from lib  import matrix_aux
-
+import math
 def write_files(faces_list,results_path,faces_ID,complete_flux):
 	#flux
 	file_names=File_names()
@@ -84,6 +85,10 @@ def integration_process(folder_path,preProcData):
 	results_folder=file_names.get_results_folder_name()
 	results_path=os.path.join(folder_path,results_folder)
 
+#	Source field
+	mu0=4.0*math.pi*math.pow(10.0,-7.0)
+	mu_core=mu0*2.0
+
 #%% Instances and geral definitions
 	global_variables=GlobalVariables()
 	error=Errors()
@@ -112,8 +117,6 @@ def integration_process(folder_path,preProcData):
 	nodes_coordenates=mesh_data.NodesCoordenates
 	elem_tags=mesh_data.ElemTags
 	elem_type=mesh_data.ElemType
-
-
 
 	#%% Get 2D and 3D elements, with their materials name
 	elem_2D_ID=list()
@@ -145,6 +148,8 @@ def integration_process(folder_path,preProcData):
 	number_nodes=len(nodes_coordenates)
 	faces_ID=list()
 	faces_list=list()
+	plot_test_coord=list()
+	plot_test_field=list()
 
 	#%%Get source field
 
@@ -172,13 +177,14 @@ def integration_process(folder_path,preProcData):
 		full_path=os.path.join(folder_name,this_file_name)
 		points_IDs = np.genfromtxt(full_path,delimiter=' ',dtype='int', usecols=(1,2,3,4))
 		points_ID_elem = np.genfromtxt(full_path,delimiter=' ',dtype='int', usecols=(0))
+		points_ID_elem=points_ID_elem-number_elements_2D
 		points_ID_elem=points_ID_elem.tolist()
 
 
 #		Gauss points coordinates
-#		this_file_name=file_names.get_Gauss_points_coordinates_file_name()
-#		full_path=os.path.join(folder_name,this_file_name)
-#		coordinates = np.genfromtxt(full_path,delimiter=' ',dtype='double')
+		this_file_name=file_names.get_Gauss_points_coordinates_file_name()
+		full_path=os.path.join(folder_name,this_file_name)
+		coordinates = np.genfromtxt(full_path,delimiter=' ',dtype='double')
 
 
 #		Fields
@@ -198,6 +204,9 @@ def integration_process(folder_path,preProcData):
 					Hxy[0,0]=fields[k,0]
 					Hxy[1,0]=fields[k,1]
 					Hxy[2,0]=fields[k,2]
+					plot_test_field.append(Hxy)
+					plot_test_coord.append(coordinates[k])
+
 					this_points_field.append(Hxy)
 
 			else:
@@ -286,7 +295,14 @@ def integration_process(folder_path,preProcData):
 
 		faces_ID_Elem=faces_ID[elem_counter]
 		this_element_nodes=elem_nodes_3D[elem_counter]
-		mu_elem=vacuum.mu0*materials_lib[region_ID_list_3D[elem_counter]].Permeability
+		mur_r=materials_lib[region_ID_list_3D[elem_counter]].Permeability
+		mu_elem=vacuum.mu0*mur_r
+		if mur_r==1.0:
+			k_sf=0
+			k_sf=1.0
+		else:
+			k_sf=-1.0*mu0*((1.0/mu_core)-(1.0/mu0))
+			k_sf=1.0
 
 
 # Get W at reference element
@@ -331,7 +347,7 @@ def integration_process(folder_path,preProcData):
 			source=0
 			for each_integ_point in xrange(number_integ_points):
 				if run_biot_savart or run_permanent_magnets:
-					Hxy=field_solution[elem_counter][each_integ_point]
+					Hxy=field_solution[elem_counter][each_integ_point]*k_sf
 					if Hxy[0,0]!=0 or Hxy[1,0]!=0 or Hxy[2,0]!=0:
 
 						w_1_this_point=w_1[each_integ_point]
@@ -492,6 +508,9 @@ def integration_process(folder_path,preProcData):
 
 	incidence_matrix_sparse=csr_matrix((data_incidence_sparse, (rows_incidence_sparse, cols_incidence_sparse)), shape=(total_nodes,number_faces_list))
 
+	Gmsh_file_name="teste.txt"
+	path=os.path.join(results_path,Gmsh_file_name)
+	Create_Vector_field(plot_test_coord,plot_test_field,path,"H test")
 	print_message("Incidence matrix - Done")
 
 	return faces_rel_spare,incidence_matrix_sparse,fmm_sparse,faces_ID,results_path,faces_ID_deleted_list,faces_list,faces_deleted_list

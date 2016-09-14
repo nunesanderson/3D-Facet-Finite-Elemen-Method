@@ -1,4 +1,4 @@
-from lib.read_write_TXT_files import  write_file,read_numeric_file_numpy,get_file_block, get_data_from_file
+from lib.read_write_TXT_files import  write_file,read_numeric_file_numpy,get_file_block, get_data_from_file,write_numeric_file_numpy
 from lib.shape_functions import ShapeFuncions, GaussPoints,Operations
 from RNMFEM.structs import File_names
 import numpy as np
@@ -170,10 +170,10 @@ def Create_B_vector_plot(mesh_data,results_path,tags_plot):
 		if run_this_element and elem_type[elem_counter]>3:
 			this_elem_type=elem_type[elem_counter]
 
-#			gauss_points=get_gauss_points_class.get_gauss_points(this_elem_type)
-			gauss_points=get_gauss_points_class.get_local_element_center_point(this_elem_type)
-#			number_integ_points=len(gauss_points)
-			number_integ_points=1
+			gauss_points=get_gauss_points_class.get_gauss_points(this_elem_type)
+#			gauss_points=get_gauss_points_class.get_local_element_center_point(this_elem_type)
+			number_integ_points=len(gauss_points)
+#			number_integ_points=1
 			this_element_nodes=elem_nodes[elem_counter]
 
 			for each_integ_point in range(0,number_integ_points):
@@ -190,6 +190,7 @@ def Create_B_vector_plot(mesh_data,results_path,tags_plot):
 	Gmsh_file_name=file_names.get_Gmsh_B_field_file_name()
 	path=os.path.join(results_path,Gmsh_file_name)
 	Create_Vector_field(xy_plot,B_list,path,"B Vector")
+
 
 def Create_Vector_field(points,results,path,plot_name):
 	'''
