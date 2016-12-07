@@ -439,7 +439,7 @@ def integration_process(folder_path,preProcData):
 		flux_source =flux_data[:,1]
 		flux_source_elem_ID=flux_data[:,0]
 		num_faces_surface_integral=len(flux_source_elem_ID)
-#		external_node_surface_ID_counter=0
+		external_node_surface_ID_counter=0
 
 		for face_counter in xrange(num_faces_surface_integral):
 			this_elem_face_ID=int(flux_source_elem_ID[face_counter])

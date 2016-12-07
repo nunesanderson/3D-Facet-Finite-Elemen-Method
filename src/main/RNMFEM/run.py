@@ -17,8 +17,11 @@ tests_folder=r'C:\Anderson\Pessoal\01_Doutorado\10_Testes'
 
 #folder_path=os.path.normpath(os.path.join(tests_folder,'34_Atuador\\01_hor\\04_FFEM_complet'))
 #folder_path=os.path.normpath(os.path.join(tests_folder,'34_Atuador\\03_vert - Subproblems\\03_FFEM_VS'))
-folder_path=os.path.normpath(os.path.join(tests_folder,'34_Atuador\\03_vert - Subproblems\\02_FFEM_complete'))
-
+#folder_path=os.path.normpath(os.path.join(tests_folder,'34_Atuador\\03_vert - Subproblems\\02_FFEM_complete'))
+#folder_path=os.path.normpath(os.path.join(tests_folder,'31_Subdomain_Dular_2009\\FFEM_Complete'))
+#folder_path=os.path.normpath(os.path.join(tests_folder,'31_Subdomain_Dular_2009\\FFEM_VS'))
+#folder_path=os.path.normpath(os.path.join(tests_folder,'31_Subdomain_Dular_2009\\FFEM_VS_corrected'))
+folder_path=os.path.normpath(os.path.join(tests_folder,'34_Atuador_vert\\FFEM_Complete'))
 setup_file='setup.txt'
 mesh_file='model.msh'
 
@@ -32,7 +35,8 @@ pre_proc_data= get_preproc_data(mesh_file_name, setup_file_name)
 
 #%%Processing
 processing(folder_path,pre_proc_data)
-#
+
+
 #%%Post processing
 
 #==============================================================================
@@ -56,7 +60,7 @@ Create_B_vector_plot(pre_proc_data.MeshData,results_path,tags_plot)
 #==============================================================================
 vol_phys_ID=[2001]
 
-data=r"C:\Anderson\Pessoal\01_Doutorado\10_Testes\34_Atuador\03_vert - Subproblems\01_GetDP\bLine.dat"
+data=r"C:\Anderson\Pessoal\01_Doutorado\10_Testes\34_Atuador_vert\GetDP_3D\bLine.dat"
 data = np.genfromtxt(data,delimiter=' ')
 x=data[:,3]
 y=data[:,4]
