@@ -109,7 +109,7 @@ plt.grid(True,which='minor')
 plt.grid(True)
 plt.axvline(x=-150, color='blue',lw=2)
 plt.axvline(x=150, color='blue',lw=2 )
-plt.savefig(savepath+"\linha_H_"+mesh_type+"_x.pdf", bbox_inches='tight')
+#plt.savefig(savepath+"\linha_H_"+mesh_type+"_x.pdf", bbox_inches='tight')
 
 plt.figure(4)
 plt.plot(x1, y1,label='Primeira ordem',color="black",linestyle='-.',lw=3)
@@ -124,12 +124,12 @@ frame.set_facecolor('0.90')
 if mesh_type=="grossa":
     plt.ylim(ymax=1000.0)
 else:
-    plt.ylim(ymax=1500.0) 
-    
+    plt.ylim(ymax=1500.0)
+
 plt.axvline(x=-150, color='blue',lw=2)
 plt.axvline(x=150, color='blue',lw=2 )
 plt.grid(True)
-plt.savefig(savepath+"\linha_H_"+mesh_type+"_x_zoom.pdf", bbox_inches='tight')
+#plt.savefig(savepath+"\linha_H_"+mesh_type+"_x_zoom.pdf", bbox_inches='tight')
 
 
 plt.figure(5)
@@ -145,7 +145,7 @@ plt.grid(True)
 plt.axvline(x=-150, color='blue',lw=2)
 plt.axvline(x=150, color='blue',lw=2 )
 plt.show()
-plt.savefig(savepath+"\linha_erro_"+mesh_type+"_x.pdf", bbox_inches='tight')
+#plt.savefig(savepath+"\linha_erro_"+mesh_type+"_x.pdf", bbox_inches='tight')
 
 plt.figure(6)
 plt.semilogy(x1, error_first,color="black")
@@ -165,7 +165,7 @@ plt.grid(True,which='minor')
 plt.grid(True)
 plt.axvline(x=-150, color='blue',lw=2)
 plt.axvline(x=150, color='blue',lw=2 )
-plt.savefig(savepath+"\linha_erro_"+mesh_type+"_x_zoom.pdf", bbox_inches='tight')
+#plt.savefig(savepath+"\linha_erro_"+mesh_type+"_x_zoom.pdf", bbox_inches='tight')
 plt.show()
 
 print("Done")

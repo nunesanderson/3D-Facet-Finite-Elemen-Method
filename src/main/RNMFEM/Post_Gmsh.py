@@ -4,8 +4,68 @@ from RNMFEM.structs import File_names
 import numpy as np
 from scipy import linalg
 import os
+import math
 
 
+
+
+def interpolated_along_line(vol_phys_ID,xyz_list,pre_proc_data,results_path):
+	operations=Operations()
+	mesh_data=pre_proc_data.MeshData
+	get_gauss_points_class=GaussPoints()
+	shape_functions=ShapeFuncions()
+	file_names=File_names()
+	#Mesh data
+	nodes_coordenates=mesh_data.NodesCoordenates
+	elem_tags=mesh_data.ElemTags
+	elem_type=mesh_data.ElemType
+	elem_nodes=mesh_data.ElemNodes
+	number_elements=len(elem_tags)
+	xy_plot=list()
+	field=list()
+
+	#Reads flux file
+	flux_results_file_name=file_names.flux_results_file_name()
+	full_path=os.path.join(results_path,flux_results_file_name)
+	new_flux=read_numeric_file_numpy(full_path)
+
+	#Read faces_ID
+	faces_ID_file_name=file_names.get_faces_ID_file_name()
+	full_path=os.path.join(results_path,faces_ID_file_name)
+	data=get_data_from_file(full_path)
+	faces_ID=get_file_block("$faces_ID","$Endfaces_ID",0,data,int)
+
+	#Read faces_from_to
+	from_to_file_name=file_names.faces_from_to_file_name()
+	full_path=os.path.join(results_path,from_to_file_name)
+	faces_from_to=read_numeric_file_numpy(full_path)
+
+	for xyz in xyz_list:
+		counter=-1
+		this_element=False
+		for elem_counter in range(0,number_elements):
+			this_elem_type=elem_type[elem_counter]
+			if this_elem_type==4:
+				counter=counter+1
+				if elem_tags[elem_counter][0] in vol_phys_ID:
+					nodes_list= mesh_data.ElemNodes[elem_counter]
+					uvp=operations.convert_real_to_local(elem_counter,this_elem_type,xyz[0],xyz[1],xyz[2],nodes_list,nodes_coordenates)
+					N=shape_functions.get_node_shape_function(this_elem_type,uvp[0],uvp[1],uvp[2])
+					if max(N)<=1.0 and min(N)>=0.0:
+						this_element=True
+						break
+
+		b_at_point=get_B_vector_point_uvp(uvp[0],uvp[1],uvp[2],elem_counter,counter,elem_type,elem_nodes,faces_ID,nodes_coordenates,new_flux,faces_from_to)
+		b_at_point=np.array([b_at_point[0,0],b_at_point[1,0],b_at_point[2,0]])
+		field.append(b_at_point)
+
+	Gmsh_file_name=file_names.get_B_Gmsh_line_file_name()
+	path=os.path.join(results_path,Gmsh_file_name)
+	Create_Vector_field(xyz_list,field,path,"B Vector")
+
+	Gmsh_file_name="line_field.txt"
+	path=os.path.join(results_path,Gmsh_file_name)
+	write_numeric_file_numpy(path,field)
 
 def integrate_B_surface(pre_proc_data,face_phys_ID,vol_phys_ID,results_path):
 
@@ -41,7 +101,7 @@ def integrate_B_surface(pre_proc_data,face_phys_ID,vol_phys_ID,results_path):
 	faces_from_to=read_numeric_file_numpy(full_path)
 
 	flux=0
-	for elem_counter in range(0,number_elements):
+	for elem_counter in xrange(number_elements):
 		this_elem_type=elem_type[elem_counter]
 		if this_elem_type==2 and elem_tags[elem_counter][0]==face_phys_ID:
 			nodes_list_2D= mesh_data.ElemNodes[elem_counter]
@@ -170,10 +230,10 @@ def Create_B_vector_plot(mesh_data,results_path,tags_plot):
 		if run_this_element and elem_type[elem_counter]>3:
 			this_elem_type=elem_type[elem_counter]
 
-			gauss_points=get_gauss_points_class.get_gauss_points(this_elem_type)
-#			gauss_points=get_gauss_points_class.get_local_element_center_point(this_elem_type)
-			number_integ_points=len(gauss_points)
-#			number_integ_points=1
+#			gauss_points=get_gauss_points_class.get_gauss_points(this_elem_type)
+			gauss_points=get_gauss_points_class.get_local_element_center_point(this_elem_type)
+#			number_integ_points=len(gauss_points)
+			number_integ_points=1
 			this_element_nodes=elem_nodes[elem_counter]
 
 			for each_integ_point in range(0,number_integ_points):
@@ -190,6 +250,12 @@ def Create_B_vector_plot(mesh_data,results_path,tags_plot):
 	Gmsh_file_name=file_names.get_Gmsh_B_field_file_name()
 	path=os.path.join(results_path,Gmsh_file_name)
 	Create_Vector_field(xy_plot,B_list,path,"B Vector")
+
+#	H_list=list()
+#	mu0=4.0*math.pi*pow(10,-7)
+#	for each in B_list:
+#		H_list.append(each*1.0/mu0)
+#	write_numeric_file_numpy(results_path+"\\H_source_FFEM.txt",H_list)
 
 
 def Create_Vector_field(points,results,path,plot_name):

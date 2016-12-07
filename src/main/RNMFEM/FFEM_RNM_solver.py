@@ -44,7 +44,7 @@ def write_files(faces_list,results_path,faces_ID,complete_flux):
 	write_numeric_data_file(full_path,faces_ID,"faces_ID",True)
 
 
-def run_solver(faces_rel_matrix,incidence_matrix,faces_fmm_matrix,faces_ID_deleted_list,faces_list,faces_deleted_list):
+def run_solver(faces_rel_matrix,incidence_matrix,faces_fmm_matrix,source_flux_sparse,faces_ID_deleted_list,faces_list,faces_deleted_list,BC_nodes,BC_values):
 
 	from main.RNM_Solver import Solver
 
@@ -54,7 +54,7 @@ def run_solver(faces_rel_matrix,incidence_matrix,faces_fmm_matrix,faces_ID_delet
 	admitance_matrix=np.linalg.inv(faces_rel_matrix)
 	del(faces_rel_matrix)
 
-	flux=Solver.SolveMagneticCircuit(incidence_matrix,admitance_matrix,faces_fmm_matrix)
+	flux=Solver.SolveMagneticCircuit(incidence_matrix,admitance_matrix,faces_fmm_matrix,source_flux_sparse,BC_nodes,BC_values)
 	del(incidence_matrix)
 	del(admitance_matrix)
 	del(faces_fmm_matrix)
@@ -75,8 +75,8 @@ def run_solver(faces_rel_matrix,incidence_matrix,faces_fmm_matrix,faces_ID_delet
 	return complete_flux
 
 def processing(folder_path,preProcData):
-	faces_rel_spare,incidence_matrix_sparse,fmm_sparse,faces_ID,results_path,faces_ID_deleted_list,faces_list,faces_deleted_list=integration_process(folder_path,preProcData)
-	complete_flux=run_solver(faces_rel_spare,incidence_matrix_sparse,fmm_sparse,faces_ID_deleted_list,faces_list,faces_deleted_list)
+	faces_rel_spare,incidence_matrix_sparse,fmm_sparse,source_flux_sparse,faces_ID,results_path,faces_ID_deleted_list,faces_list,faces_deleted_list,BC_nodes,BC_values=integration_process(folder_path,preProcData)
+	complete_flux=run_solver(faces_rel_spare,incidence_matrix_sparse,fmm_sparse,source_flux_sparse,faces_ID_deleted_list,faces_list,faces_deleted_list,BC_nodes,BC_values)
 	write_files(faces_list,results_path,faces_ID,complete_flux)
 
 
@@ -87,7 +87,9 @@ def integration_process(folder_path,preProcData):
 
 #	Source field
 	mu0=4.0*math.pi*math.pow(10.0,-7.0)
-	mu_core=mu0*2.0
+	run_surface_integral=False
+	run_biot_savart=True
+	run_VS=False
 
 #%% Instances and geral definitions
 	global_variables=GlobalVariables()
@@ -110,6 +112,8 @@ def integration_process(folder_path,preProcData):
 	boundary=preProcData.BC
 	external_reluctances=preProcData.ExternalReluctances
 	coupling=preProcData.CoupNet
+
+
 	#------------------------------------------------------------------------------
 	# Mesh
 	mesh_data=preProcData.MeshData
@@ -152,10 +156,7 @@ def integration_process(folder_path,preProcData):
 	plot_test_field=list()
 
 	#%%Get source field
-
 	field_solution=list()
-
-	run_biot_savart=True
 	run_permanent_magnets=False
 
 #	Run Permanent Magnets
@@ -177,6 +178,7 @@ def integration_process(folder_path,preProcData):
 		full_path=os.path.join(folder_name,this_file_name)
 		points_IDs = np.genfromtxt(full_path,delimiter=' ',dtype='int', usecols=(1,2,3,4))
 		points_ID_elem = np.genfromtxt(full_path,delimiter=' ',dtype='int', usecols=(0))
+#		points_ID_elem=points_ID_elem-number_elements_2D
 		points_ID_elem=points_ID_elem-number_elements_2D
 		points_ID_elem=points_ID_elem.tolist()
 
@@ -189,6 +191,8 @@ def integration_process(folder_path,preProcData):
 
 #		Fields
 		this_file_name=file_names.get_Gauss_points_H_field_file_name()
+#		this_file_name="H_source_FFEM.txt"
+
 		full_path=os.path.join(folder_name,this_file_name)
 		fields = np.genfromtxt(full_path,delimiter=' ',dtype='double')
 		for elem_counter in range(0,number_elements):
@@ -243,7 +247,6 @@ def integration_process(folder_path,preProcData):
 #%%Integration
 	print_message("Integration process")
 
-
 	num_meshed_rel=len(faces_list)
 	num_non_meshed_rel=len(external_reluctances)
 	num_total_rel=num_meshed_rel+num_non_meshed_rel
@@ -271,12 +274,18 @@ def integration_process(folder_path,preProcData):
 
 	data_rel_sparse=np.zeros(len(rows_rel_sparse))
 	faces_rel_spare=csr_matrix((data_rel_sparse, (rows_rel_sparse, cols_rel_sparse)), shape=(num_total_rel, num_total_rel))
+
 #fmm matrix
 	cols_fmm_sparse=np.zeros(num_meshed_rel)
 	rows_fmm_sparse=xrange(0,num_meshed_rel)
 	data_fmm_sparse=np.zeros(num_meshed_rel)
 	fmm_sparse=csr_matrix((data_fmm_sparse, (rows_fmm_sparse, cols_fmm_sparse)), shape=(num_total_rel,1))
 
+#source_flux matrix
+	cols_source_flux_sparse=np.zeros(num_meshed_rel)
+	rows_source_flux_sparse=xrange(0,num_meshed_rel)
+	data_source_flux_sparse=np.zeros(num_meshed_rel)
+	source_flux_sparse=csr_matrix((data_source_flux_sparse, (rows_source_flux_sparse, cols_source_flux_sparse)), shape=(num_total_rel,1))
 #grad_phi matrix
 #	cols_grad_phi_sparse=np.zeros(num_meshed_rel)
 #	rows_grad_phi_sparse=xrange(0,num_meshed_rel)
@@ -297,12 +306,13 @@ def integration_process(folder_path,preProcData):
 		this_element_nodes=elem_nodes_3D[elem_counter]
 		mur_r=materials_lib[region_ID_list_3D[elem_counter]].Permeability
 		mu_elem=vacuum.mu0*mur_r
-		if mur_r==1.0:
-			k_sf=0
-			k_sf=1.0
-		else:
-			k_sf=-1.0*mu0*((1.0/mu_core)-(1.0/mu0))
-			k_sf=1.0
+
+		k_sf=1.0
+		if run_VS:
+			if mur_r>1.0:
+				k_sf=-1.0*mu0*((1.0/mu_elem)-(1.0/mu0))
+			else:
+				k_sf=0
 
 
 # Get W at reference element
@@ -395,7 +405,8 @@ def integration_process(folder_path,preProcData):
 				faces_rel_spare[face_ID_1,face_ID_2]+=wtot
 	print_message("Integration process - Done")
 
-# Connection between the physical line with the circuit node
+
+#%% Connection between the physical line with the circuit node
 	print_message("External faces")
 
 	for counter,each_face in enumerate(faces_list):
@@ -404,6 +415,7 @@ def integration_process(folder_path,preProcData):
 				nodes_face_shared=all_elem_nodes_3D[each_face_con]
 				phys_line=elem_tags[each_face_con][0]
 
+#Coupling with external reluctances
 				for each_coupling in coupling:
 					if each_coupling.PhysLine==phys_line:
 
@@ -418,6 +430,39 @@ def integration_process(folder_path,preProcData):
 							   faces_list[counter]=new_face
 							   each_coupling.Face_ID_List.append(counter)
 
+#%% Insert the flux sources
+	BC_nodes=list()
+	if run_surface_integral:
+		folder_name=os.path.join(folder_path,results_folder)
+		full_path=os.path.join(folder_name,"flux_surface.txt")
+		flux_data = np.genfromtxt(full_path,delimiter=' ',dtype='double')
+		flux_source =flux_data[:,1]
+		flux_source_elem_ID=flux_data[:,0]
+		num_faces_surface_integral=len(flux_source_elem_ID)
+#		external_node_surface_ID_counter=0
+
+		for face_counter in xrange(num_faces_surface_integral):
+			this_elem_face_ID=int(flux_source_elem_ID[face_counter])
+			this_face_nodes_elem=set(all_elem_nodes_3D[this_elem_face_ID])
+
+			for counter,each_face in enumerate(faces_list):
+				this_face_nodes=set(each_face.nodes_list)
+				if this_face_nodes_elem.issubset(this_face_nodes):
+#					print this_elem_face_ID
+#					external_node_surface_ID=len(coupling)+number_elements-1
+#					BC_nodes.append(external_node_surface_ID)
+#					external_node_surface_ID_counter+=1
+					new_face=Face(each_face.nodes_list,each_face.elem_1,each_face.elem_2)
+					faces_list[counter]=new_face
+					source_flux_sparse[counter]=flux_source[face_counter]
+					faces_rel_spare[counter,counter]=10000000000000000.0
+					fmm_sparse[counter,0]=0.0
+#					print each_face.elem_1
+#					break
+
+	BC_values=[0]*len(BC_nodes)
+
+
 #%% Delete the faces without external connections
 	faces_ID_deleted_list=list()
 	faces_deleted_list=list()
@@ -431,7 +476,7 @@ def integration_process(folder_path,preProcData):
 	faces_rel_spare=matrix_aux.delete_sparse_mask(faces_rel_spare,faces_ID_deleted_list,0)
 	faces_rel_spare=matrix_aux.delete_sparse_mask(faces_rel_spare,faces_ID_deleted_list,1)
 	fmm_sparse=matrix_aux.delete_sparse_mask(fmm_sparse,faces_ID_deleted_list,0)
-
+	source_flux_sparse=matrix_aux.delete_sparse_mask(source_flux_sparse,faces_ID_deleted_list,0)
 
 ##Delete from faces_list
 	counter=0
@@ -456,6 +501,7 @@ def integration_process(folder_path,preProcData):
 		this_position=num_meshed_rel-number_deleted+counter
 		faces_rel_spare[this_position,this_position]=reluctance_value
 		fmm_sparse[this_position]=external_reluctances[counter].fmm
+		source_flux_sparse[this_position]=external_reluctances[counter].flux
 
 
 	external_nodes_list=list()
@@ -486,6 +532,8 @@ def integration_process(folder_path,preProcData):
 
 	if run_external_circuit:
 		external_nodes+=len(external_nodes_list)
+#	elif run_surface_integral:
+#		external_nodes+=len(BC_nodes)
 	else:
 		external_nodes+=0
 
@@ -513,6 +561,6 @@ def integration_process(folder_path,preProcData):
 	Create_Vector_field(plot_test_coord,plot_test_field,path,"H test")
 	print_message("Incidence matrix - Done")
 
-	return faces_rel_spare,incidence_matrix_sparse,fmm_sparse,faces_ID,results_path,faces_ID_deleted_list,faces_list,faces_deleted_list
+	return faces_rel_spare,incidence_matrix_sparse,fmm_sparse,source_flux_sparse,faces_ID,results_path,faces_ID_deleted_list,faces_list,faces_deleted_list,BC_nodes,BC_values
 
 

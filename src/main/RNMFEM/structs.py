@@ -11,7 +11,7 @@ MaterialProp=namedtuple('MaterialProp', 'Permitivity Conductivity Permeability H
 RegionMaterial=namedtuple('RegionMaterial', 'RegionNumber MaterialName')
 RegionExcitation=namedtuple('RegionExcitation', 'RegionNumber Value')
 BC=namedtuple('BC', 'LineNumber Value')
-ExternalReluctances=namedtuple('ExternalReluctances', 'node_from node_to LS Material fmm')
+ExternalReluctances=namedtuple('ExternalReluctances', 'node_from node_to LS Material fmm flux')
 PreProcData=namedtuple('PreProcData', 'MeshData MaterialProp RegionMaterial RegionExcitation BC CoupNet ExternalReluctances ExternalMagneticField')
 ReturnGetField=namedtuple('ReturnGetField', 'TpotXY TgradPotXY')
 FieldAtPoint=namedtuple('HfieldAtPoint', 'Dist FieldX FieldY MagField')
@@ -28,10 +28,11 @@ str_noflux_face=global_variables.str_noflux_face
 
 class Face(object):
 
-	def __init__(self, nodes_list=None,elem_1=None,elem_2=None):
+	def __init__(self, nodes_list=None,elem_1=None,elem_2=None,flux=None):
 		self.nodes_list=nodes_list
 		self.elem_1=elem_1
 		self.elem_2=elem_2
+		self.flux=flux
 
 	def add_to_list(self,nodes_list,Elem,face_list):
 		face_counter=0

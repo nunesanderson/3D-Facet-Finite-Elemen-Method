@@ -11,19 +11,19 @@ import numpy as np
 from lib.messages import print_message
 from lib import matrix_aux
 from scipy.sparse import csr_matrix
-from scipy.sparse.linalg import spsolve 
+from scipy.sparse.linalg import spsolve
 
-def SolveMagneticCircuit(Ac,Yb, F):
+def SolveMagneticCircuit(Ac,Yb, F,J,BC_nodes,BC_values):
 	print_message("Running circuit solver")
-	flux=__solve_nodal_circuit(Ac,Yb, F)
+	flux=__solve_nodal_circuit(Ac,Yb, F,J,BC_nodes,BC_values)
 #	flux=solve_nodal_circuit_diagonal(Ac,Yb, F)
 	print_message("Running circuit solver - Done")
 	return flux
 
 
-def __solve_nodal_circuit(Ac,Yb,E):
+def __solve_nodal_circuit(Ac,Yb,E,J,BC_nodes,BC_values):
 	'''
-	
+
 	Based on Chua, 1975
 	Solve circuit based on nodal  analysis\n
 	Ac: nodal incidence matrix (with reference node)\n
@@ -41,8 +41,15 @@ def __solve_nodal_circuit(Ac,Yb,E):
 	del(Ac)
 	At=A.T
 	Yn=np.dot(np.dot(A,Yb),At)
-	Jn=-np.dot(np.dot(A,Yb),E)
+	Jn=np.dot(A,J-np.dot(Yb,E))
 	del(A)
+
+#Applies the boundaries conditions
+	for counter,each_BC_node in enumerate(BC_nodes):
+		Yn[each_BC_node,:]=0.0
+		Yn[each_BC_node,each_BC_node]=1.0
+		Jn[each_BC_node]=BC_values[counter]
+
 	vn=np.linalg.linalg.solve(Yn, Jn)
 	del(Yn)
 	del(Jn)
@@ -50,9 +57,9 @@ def __solve_nodal_circuit(Ac,Yb,E):
 	del(At)
 	v=v_b+E
 	i=np.dot(Yb,v)
-	
-	return i
-				
+
+	return i-J
+
 def __solve_nodal_circuit_sparse(Ac,Yb,E):
 	'''
 	Based on Chua, 1975
@@ -77,7 +84,7 @@ def __solve_nodal_circuit_sparse(Ac,Yb,E):
 		v=(v_b+E.T).T
 		i=Yb.dot(v)
 	return i
-	
+
 def __solve_nodal_circuit_diagonal(Ac,Yb,E):
 	'''
 	Based on Chua, 1975
@@ -111,36 +118,36 @@ def __solve_node_circuit(Ac,Yb, F):
 	Yb: branch admitance matrix\n
 	F: branch source vector
 	'''
- 
-	#------------------------------------------------------------------------------ 
+
+	#------------------------------------------------------------------------------
 	# Incidence matrix without the reference node
 	A=np.delete(Ac, (0), axis=0) #Bus incidence matrix
 	AYP=np.dot(A,Yb)
 	YB=np.dot(AYP,np.transpose(A))
 	F_IN=np.dot(-AYP,F)
-	
-	#------------------------------------------------------------------------------ 
+
+	#------------------------------------------------------------------------------
 	# Solves the linear system
 	print("Solving linear system")
 	V=np.linalg.linalg.solve(YB, F_IN)
 	V=np.insert(V, 0, [0], axis=0)
-	
-	#------------------------------------------------------------------------------  
+
+	#------------------------------------------------------------------------------
 	# Post processing - Flux at each reluctance
 	flux=np.zeros((len(F),1))
-	
+
 	for eachCol in range(0,len(A[0])):
 		relNodes=Ac[:,eachCol]
-		
+
 		for eachNode in range(0,len(Ac[:,eachCol])):
 			if relNodes[eachNode]==1.0:
 				node1=eachNode
 			elif relNodes[eachNode]==-1.0:
 				node2=eachNode
-	
+
 		gradV=V[node1]-V[node2]+F[eachCol]
 		flux[eachCol]=gradV*Yb[eachCol,eachCol]
-	
+
 	return flux
 
 #%%
@@ -156,7 +163,7 @@ def __solve_mesh(B,Zb,F):
 	Zm=np.dot(np.dot(Bt,Zb),B)
 	Im=np.dot(np.linalg.inv(Zm),Egm)
 	Ib=np.dot(B,Im)
-	
+
 	return Ib
 
 
@@ -176,7 +183,7 @@ def __combination(mat,pivot_row,row_2,relation,cols):
 
 def __welsch(A):
 	'''
-	Runs the Welsch algorithm in order to find the tree and co-tree of a network\n 
+	Runs the Welsch algorithm in order to find the tree and co-tree of a network\n
 	A: nodal incidence matrix
 	'''
 #	Welsch algo
@@ -199,7 +206,7 @@ def __welsch(A):
 				break
 		if max(A[rows-1,:])==0 and min(A[rows-1,:])==0:
 			break
- 
+
 # Reorganize the matrix A in Ai1(branches) and Ai2 (links)
 	co_tree=list()
 	counter_tree=0
@@ -220,7 +227,7 @@ def __welsch(A):
 				Ai2=np.concatenate((Ai2,trans),axis=1)
 			counter_co_tree+=1
 			co_tree.append(counter_col)
-			
+
 #Loop matrix Bl
 	Kc2=np.dot(Ai1.T,Ai2)
 	Bl1=-Kc2.T
@@ -229,25 +236,25 @@ def __welsch(A):
 	return Bl,tree,co_tree
 
 def __solve_mesh_circuit(A,Zb, F):
-	
+
 	Bl,tree,co_tree=__welsch(A)
 	branches=list()
 	branches.extend(tree)
 	branches.extend(co_tree)
 	num_branches=len(branches)
-	
+
 	#Reorganize the Z,F matrices based on the tree
 	new_Zb=np.zeros((num_branches,num_branches))
 	new_F=np.zeros((num_branches,1))
 	for counter,each_branche in enumerate(branches):
 		new_Zb[counter,counter]=Zb[each_branche,each_branche]
 		new_F[counter]=F[each_branche]
-	
+
 	flux_mesh_welsch=__solve_mesh(Bl.T,new_Zb,new_F)
-	
+
 	#Reorganize the flux matrix based on the tree
 	new_Flux=np.zeros((num_branches,1))
 	for counter,each_branche in enumerate(branches):
 		new_Flux[each_branche]=flux_mesh_welsch[counter]
-		
+
 	return new_Flux

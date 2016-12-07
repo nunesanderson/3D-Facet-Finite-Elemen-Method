@@ -43,7 +43,7 @@ def get_preproc_data(mesh_file_name, setup_file_name):
 		external_field.append(ExternalMagneticField(RegionNumber=int(line[0]), Value=this_value))
 
 #------------------------------------------------------------------------------
-# Boundary condictions
+# Boundary condictions - used to define a constante BC along the surface domain
 	BCs = []
 	materials_data = get_file_block('$BCs', '$EndBCs', 0, data,float)
 	for line in materials_data:
@@ -54,7 +54,7 @@ def get_preproc_data(mesh_file_name, setup_file_name):
 	relutances=[]
 	materials_data = get_file_block('$External_reluctances', '$EndExternal_reluctances', 0, data,float)
 	for line in materials_data:
-		relutances.append(ExternalReluctances(node_from=int(line[0]),node_to=int(line[1]),LS=float(line[2]),Material= str(line[3]),fmm=line[4]))
+		relutances.append(ExternalReluctances(node_from=int(line[0]),node_to=int(line[1]),LS=float(line[2]),Material= str(line[3]),fmm=line[4],flux=line[5]))
 
 #------------------------------------------------------------------------------
 # Coupling networks
@@ -63,5 +63,6 @@ def get_preproc_data(mesh_file_name, setup_file_name):
 	for line in materials_data:
 		coupling_data.append(CouplingNetworks(PhysLine=int(line[0]),Node=int(line[1]),Face_ID_List=list()))
 	ExternalReluctances
+
 	return PreProcData(MeshData=local_mesh, MaterialProp=materials_library, RegionMaterial=regions, RegionExcitation=excitations,
 				BC=BCs,ExternalReluctances=relutances, CoupNet=coupling_data, ExternalMagneticField=external_field)
