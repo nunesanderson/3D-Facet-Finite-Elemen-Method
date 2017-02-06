@@ -40,39 +40,39 @@ B_comp_z=(data[:,2])
 #
 ##===================================================
 ### VS
-#data=r"C:\Anderson\Pessoal\01_Doutorado\10_Testes\34_Atuador_vert\FFEM_VS\results\line_field.txt"
-#data = np.genfromtxt(data,delimiter=' ')
-#B_VS_x=(data[:,0])
-#B_VS_y=(data[:,1])
-#B_VS_z=(data[:,2])
+data=r"C:\Anderson\Pessoal\01_Doutorado\10_Testes\34_Atuador_vert\FFEM_VS\results\line_field.txt"
+data = np.genfromtxt(data,delimiter=' ')
+B_VS_x=(data[:,0])
+B_VS_y=(data[:,1])
+B_VS_z=(data[:,2])
 
 
 ###===================================================
 ### BS
-#data=r"C:\Anderson\Pessoal\01_Doutorado\10_Testes\34_Atuador_vert\FFEM_VS\results\line_field_BS.txt"
-#data = np.genfromtxt(data,delimiter=' ')
-#B_BS_x=(data[:,0])*mu0
-#B_BS_y=(data[:,1])*mu0
-#B_BS_z=(data[:,2])*mu0
+data=r"C:\Anderson\Pessoal\01_Doutorado\10_Testes\34_Atuador_vert\FFEM_VS\results\line_field_BS.txt"
+data = np.genfromtxt(data,delimiter=' ')
+B_BS_x=(data[:,0])*mu0
+B_BS_y=(data[:,1])*mu0
+B_BS_z=(data[:,2])*mu0
 
 
 ###===================================================
 ### VS + Correction
-#data=r"C:\Anderson\Pessoal\01_Doutorado\10_Testes\34_Atuador_vert\FFEM_VS_corrected\results\line_field.txt"
-#data = np.genfromtxt(data,delimiter=' ')
-#B_VS_corr_x=(data[:,0])
-#B_VS_corry=(data[:,1])
-#B_VS_corrz=(data[:,2])
+data=r"C:\Anderson\Pessoal\01_Doutorado\10_Testes\34_Atuador_vert\FFEM_VS_corrected\results\line_field.txt"
+data = np.genfromtxt(data,delimiter=' ')
+B_VS_corr_x=(data[:,0])
+B_VS_corry=(data[:,1])
+B_VS_corrz=(data[:,2])
 
 #=========================
 #Plots
 plt.figure(1)
-plt.plot(x_FEM, B_FEM_z,label='FEM',color="black",lw=3,linestyle='-',alpha=0.5)
+#plt.plot(x_FEM, B_FEM_z,label='FEM',color="black",lw=3,linestyle='-',alpha=0.5)
 plt.plot(x_FEM, B_comp_z,label='FFEM - Ref.',color="black",lw=3,linestyle='-',alpha=0.5)
-#plt.plot((x_FEM), B_VS_y,label='$\mathbf{B}_2$',color="blue",linestyle='--',lw=4,alpha=0.5)
-#plt.plot((x_FEM), B_BS_y,label='$\mathbf{B}_1$: BS',color="blue",linestyle='-',lw=3)
-#plt.plot((x_FEM), B_VS_y+B_BS_y,label='$\mathbf{B}_1+\mathbf{B}_2$',color="black",linestyle='-.',lw=4,alpha=1)
-#plt.plot((x_FEM), B_VS_corry+B_BS_y,label='$\mathbf{B}_1+\mathbf{B}_2\,corrected$',color="red",linestyle='-.',lw=4,alpha=1)
+plt.plot((x_FEM), B_BS_z*15,label='$\mathbf{B}_1$x15',color="blue",linestyle='-',lw=3,alpha=0.5)
+plt.plot((x_FEM), B_VS_z,label='$\mathbf{B}_2$',color="red",linestyle='-',lw=1)
+plt.plot((x_FEM), B_VS_z+B_BS_z,label='$\mathbf{B}_1+\mathbf{B}_2$',color="black",linestyle='--',lw=4,alpha=1)
+plt.plot((x_FEM), B_VS_corrz+B_BS_z,label='$\mathbf{B}_1+\mathbf{B}_2\,corrected$',color="red",linestyle='-.',lw=4,alpha=1)
 
 
 plt.xlabel('Position along the device [m]',**axis_font)

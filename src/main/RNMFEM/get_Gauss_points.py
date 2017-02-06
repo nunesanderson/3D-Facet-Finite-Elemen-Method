@@ -23,12 +23,12 @@ def Get_Gauss_points_list(preProcData,does_write_file,folder_path):
 
 	gauss_points=GaussPoints()
 	oper=Operations()
-	
+
 	number_elements=len(elem_tags)
 	start_3D=0
 	number_gauss_points=0
 	max_number_points=0
-	
+
 	for kl in xrange(number_elements):
 		if elem_type[kl]<=3:
 			start_3D+=1
@@ -40,7 +40,7 @@ def Get_Gauss_points_list(preProcData,does_write_file,folder_path):
 				max_number_points=number_gauss_points_element
 
 	gauss_points_coordinates=np.zeros((number_gauss_points,max_number_points))
-	
+
 	point_counter=0
 	points_ID_list=list()
 	phys_region_list=list()
@@ -52,18 +52,19 @@ def Get_Gauss_points_list(preProcData,does_write_file,folder_path):
 		for eachnode in xrange(numnodes):
 			nodes.append(all_elem_nodes[kl][eachnode])
 		elem_points_ID=list()
+		elem_points_ID.append(kl)
 		for integPoint in range(0,numnodes):
 			u=integPoints[integPoint,0]
 			v= integPoints[integPoint,1]
 			p= integPoints[integPoint,2]
 			XYZ=oper.convert_local_real(elem_type[kl],u,v,p,nodes,nodes_coordenates)
-			
+
 			gauss_points_coordinates[point_counter][0]=XYZ[0]
 			gauss_points_coordinates[point_counter][1]=XYZ[1]
 			gauss_points_coordinates[point_counter][2]=XYZ[2]
 			phys_region_list.append(elem_tags[kl][0])
 			point_counter+=1
-			elem_points_ID.append(point_counter-1)
+			elem_points_ID.append(int(point_counter-1))
 		points_ID_list.append(elem_points_ID)
 
 #==============================================================================
@@ -74,8 +75,8 @@ def Get_Gauss_points_list(preProcData,does_write_file,folder_path):
 	path=os.path.join(results_path,file_names.get_Gauss_points_list_file_name())
 	path_IDs=os.path.join(results_path,file_names.get_Gauss_Points_ID_file_name())
 	path_Phys=os.path.join(results_path,file_names.get_Gauss_Points_Phys_region_file_name())
- 
- 
+
+
 
 	write_numeric_file_numpy(path_Phys,phys_region_list)
 	write_numeric_file_numpy(path,gauss_points_coordinates)

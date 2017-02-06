@@ -7,21 +7,33 @@ from lib.shape_functions import Operations,GaussPoints,ShapeFuncions
 from lib.pre_proc import get_preproc_data
 from RNMFEM.structs import File_names
 from RNMFEM.FFEM_RNM_solver import processing
-from main.RNMFEM.Post_Gmsh import Create_B_vector_plot,Create_Vector_field,get_B_vector_point_uvp,integrate_B_surface,interpolated_along_line
+from main.RNMFEM.Post_Gmsh import Create_B_vector_plot,Create_Vector_field,get_B_vector_point_uvp,integrate_B_surface,interpolated_along_line,integrate_energy
 from lib.read_write_TXT_files import  write_file,read_numeric_file_numpy,get_file_block, get_data_from_file,write_numeric_file_numpy
 
 
 
 #%% Directories to run
 tests_folder=r'C:\Anderson\Pessoal\01_Doutorado\10_Testes'
+#tests_folder=r'D:\Work\Nova pasta\01_Doutorado\10_Testes'
 
-#folder_path=os.path.normpath(os.path.join(tests_folder,'34_Atuador\\01_hor\\04_FFEM_complet'))
-#folder_path=os.path.normpath(os.path.join(tests_folder,'34_Atuador\\03_vert - Subproblems\\03_FFEM_VS'))
-#folder_path=os.path.normpath(os.path.join(tests_folder,'34_Atuador\\03_vert - Subproblems\\02_FFEM_complete'))
+
+
+
 #folder_path=os.path.normpath(os.path.join(tests_folder,'31_Subdomain_Dular_2009\\FFEM_Complete'))
 #folder_path=os.path.normpath(os.path.join(tests_folder,'31_Subdomain_Dular_2009\\FFEM_VS'))
-#folder_path=os.path.normpath(os.path.join(tests_folder,'31_Subdomain_Dular_2009\\FFEM_VS_corrected'))
-folder_path=os.path.normpath(os.path.join(tests_folder,'34_Atuador_vert\\FFEM_Complete'))
+#folder_path=os.path.normpath(os.path.join(tests_folder,'31_Subdomain_Dular_2009\\FFEM_only_corrected_BS'))
+#folder_path=os.path.normpath(os.path.join(tests_folder,'34_Atuador_vert\\FFEM_Complete'))
+#folder_path=os.path.normpath(os.path.join(tests_folder,'34_Atuador_vert\\FFEM_VS'))
+#folder_path=os.path.normpath(os.path.join(tests_folder,'34_Atuador_vert\\FFEM_VS_corrected'))
+#folder_path=os.path.normpath(os.path.join(tests_folder,'34_Atuador_vert\\FFEM_VS_Only_corrected'))
+#folder_path=os.path.normpath(os.path.join(tests_folder,'35_Subdomain_Dular_2009_electric\FFEM_Complete'))
+folder_path=os.path.normpath(os.path.join(tests_folder,'36_Subdomain_Dular_2009_magnetic\FFEM_Complete'))
+#folder_path=os.path.normpath(os.path.join(tests_folder,'37_Atuador_hor\\04_FFEM_coarse'))
+#folder_path=os.path.normpath(os.path.join(tests_folder,'37_Atuador_hor\\08_FFEM_fine'))
+#folder_path=os.path.normpath(os.path.join(tests_folder,'37_Atuador_hor\\09_FFEM_Circuit_coupling'))
+#folder_path=os.path.normpath(os.path.join(tests_folder,'37_Atuador_hor\\10_FFEM_Circuit_coupling_perfect'))
+#folder_path=os.path.normpath(os.path.join(tests_folder,'38_convergence\\FFEM'))
+
 setup_file='setup.txt'
 mesh_file='model.msh'
 
@@ -44,36 +56,37 @@ processing(folder_path,pre_proc_data)
 #==============================================================================
 tags_plot=list()
 tags_plot="all"
-#tags_plot.append(1003)
+#tags_plot=[173,175,176]
 Create_B_vector_plot(pre_proc_data.MeshData,results_path,tags_plot)
 
 #==============================================================================
 # Integration over a surface
 #==============================================================================
-#face_phys_ID=2062
-#vol_phys_ID=2001
-#flux=integrate_B_surface(pre_proc_data,face_phys_ID,vol_phys_ID,results_path)
+face_phys_ID=1012
+vol_phys_ID=1004
+flux=integrate_B_surface(pre_proc_data,face_phys_ID,vol_phys_ID,results_path)
+#energy=integrate_energy(pre_proc_data,vol_phys_ID,results_path)
 
 
 #==============================================================================
 # Interpolate along the line
 #==============================================================================
-vol_phys_ID=[2001]
-
-data=r"C:\Anderson\Pessoal\01_Doutorado\10_Testes\34_Atuador_vert\GetDP_3D\bLine.dat"
-data = np.genfromtxt(data,delimiter=' ')
-x=data[:,3]
-y=data[:,4]
-z=data[:,5]
-xyz_list=list()
-counter=0
-for each_x in x:
-	this_point=[each_x,y[counter],z[counter]]
-	xyz_list.append(this_point)
-	counter+=1
-
-np.savetxt(folder_path+"\\results\\"+'line_coordinates.txt', xyz_list, delimiter=' ')
-interpolated_along_line(vol_phys_ID,xyz_list,pre_proc_data,results_path)
+#vol_phys_ID=[1007,1008,1009]
+#
+#data=os.path.normpath(os.path.join(tests_folder,'37_Atuador_hor\\01_Getdp_fine\\bLine.dat'))
+#data = np.genfromtxt(data,delimiter=' ')
+#x=data[:,3]
+#y=data[:,4]
+#z=data[:,5]
+#xyz_list=list()
+#counter=0
+#for each_x in x:
+#	this_point=[each_x,y[counter],z[counter]]
+#	xyz_list.append(this_point)
+#	counter+=1
+##
+#np.savetxt(folder_path+"\\results\\"+'line_coordinates.txt', xyz_list, delimiter=' ')
+#interpolated_along_line(vol_phys_ID,xyz_list,pre_proc_data,results_path)
 
 
 print "ok"

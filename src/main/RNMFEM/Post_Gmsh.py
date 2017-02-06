@@ -5,8 +5,8 @@ import numpy as np
 from scipy import linalg
 import os
 import math
-
-
+from lib  import matrix_aux
+from materials_library import get_materials_lib
 
 
 def interpolated_along_line(vol_phys_ID,xyz_list,pre_proc_data,results_path):
@@ -53,11 +53,15 @@ def interpolated_along_line(vol_phys_ID,xyz_list,pre_proc_data,results_path):
 					N=shape_functions.get_node_shape_function(this_elem_type,uvp[0],uvp[1],uvp[2])
 					if max(N)<=1.0 and min(N)>=0.0:
 						this_element=True
-						break
 
-		b_at_point=get_B_vector_point_uvp(uvp[0],uvp[1],uvp[2],elem_counter,counter,elem_type,elem_nodes,faces_ID,nodes_coordenates,new_flux,faces_from_to)
-		b_at_point=np.array([b_at_point[0,0],b_at_point[1,0],b_at_point[2,0]])
-		field.append(b_at_point)
+						break
+		if this_element:
+			b_at_point=get_B_vector_point_uvp(uvp[0],uvp[1],uvp[2],elem_counter,counter,elem_type,elem_nodes,faces_ID,nodes_coordenates,new_flux,faces_from_to)
+			b_at_point=np.array([b_at_point[0,0],b_at_point[1,0],b_at_point[2,0]])
+			field.append(b_at_point)
+		else:
+			b_at_point=np.array([0,0,0])
+			field.append(b_at_point)
 
 	Gmsh_file_name=file_names.get_B_Gmsh_line_file_name()
 	path=os.path.join(results_path,Gmsh_file_name)
@@ -66,6 +70,86 @@ def interpolated_along_line(vol_phys_ID,xyz_list,pre_proc_data,results_path):
 	Gmsh_file_name="line_field.txt"
 	path=os.path.join(results_path,Gmsh_file_name)
 	write_numeric_file_numpy(path,field)
+
+def integrate_energy(pre_proc_data,vol_phys_ID,results_path):
+
+#Instances
+	operations=Operations()
+	mesh_data=pre_proc_data.MeshData
+	get_gauss_points_class=GaussPoints()
+	file_names=File_names()
+
+	regions_material=pre_proc_data.RegionMaterial
+
+#Mesh data
+	nodes_coordenates=mesh_data.NodesCoordenates
+	elem_tags=mesh_data.ElemTags
+	elem_type=mesh_data.ElemType
+	elem_nodes=mesh_data.ElemNodes
+	number_elements=len(elem_tags)
+	xy_plot=list()
+	field=list()
+
+#Reads flux file
+	flux_results_file_name=file_names.flux_results_file_name()
+	full_path=os.path.join(results_path,flux_results_file_name)
+	new_flux=read_numeric_file_numpy(full_path)
+
+#Read faces_ID
+	faces_ID_file_name=file_names.get_faces_ID_file_name()
+	full_path=os.path.join(results_path,faces_ID_file_name)
+	data=get_data_from_file(full_path)
+	faces_ID=get_file_block("$faces_ID","$Endfaces_ID",0,data,int)
+
+#Read faces_from_to
+	from_to_file_name=file_names.faces_from_to_file_name()
+	full_path=os.path.join(results_path,from_to_file_name)
+	faces_from_to=read_numeric_file_numpy(full_path)
+
+	mu0=4.0*math.pi*math.pow(10.0,-7.0)
+	materials_lib=get_materials_lib()
+#Get the magnetic induction, based on the 3D elements interpolation
+	energy=0
+	counter=-1
+	for elem_counter_3D in xrange(number_elements):
+		this_elem_type_3D=elem_type[elem_counter_3D]
+		nodes_list_3D= mesh_data.ElemNodes[elem_counter_3D]
+		gauss_points=get_gauss_points_class.get_gauss_points(this_elem_type_3D)
+		num_gauss_points=len(gauss_points)
+		if this_elem_type_3D==4:
+			counter=counter+1
+			material_name=""
+			for each_region in regions_material:
+				if each_region.RegionNumber==elem_tags[elem_counter_3D][0]:
+					material_name=each_region.MaterialName
+
+
+			mur_r=materials_lib[material_name].Permeability
+			mu_elem=mu0*mur_r
+			wtri=get_gauss_points_class.get_integration_weight(this_elem_type_3D)
+
+			for each_integ_point in xrange(num_gauss_points):
+				u=gauss_points[each_integ_point,0]
+				v=gauss_points[each_integ_point,1]
+				p=gauss_points[each_integ_point,2]
+				b_at_point=get_B_vector_point_uvp(u,v,p,elem_counter_3D,counter,elem_type,elem_nodes,faces_ID,nodes_coordenates,new_flux,faces_from_to)
+#				b_at_point=np.array([b_at_point[0,0],b_at_point[1,0],b_at_point[2,0]])
+
+				# Jacobian
+				jac=operations.get_jacobian(this_elem_type_3D,nodes_list_3D,nodes_coordenates,u,v,p)
+				det_jac=np.linalg.det(jac)
+				abs_det_jac=np.abs(det_jac)
+
+#					Element energy
+				energy=energy+0.5*(1.0/mu_elem)*wtri*abs_det_jac*matrix_aux.dot_product(b_at_point,b_at_point)
+
+
+#	Gmsh_file_name=file_names.get_B_Gmsh_surface_file_name()
+#	path=os.path.join(results_path,Gmsh_file_name)
+#	Create_Vector_field(xy_plot,field,path,"B Vector")
+
+	return energy
+
 
 def integrate_B_surface(pre_proc_data,face_phys_ID,vol_phys_ID,results_path):
 

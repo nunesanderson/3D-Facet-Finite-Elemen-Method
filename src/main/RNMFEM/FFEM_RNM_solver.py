@@ -1,3 +1,4 @@
+
 import os
 import copy
 from scipy.sparse import *
@@ -178,7 +179,6 @@ def integration_process(folder_path,preProcData):
 		full_path=os.path.join(folder_name,this_file_name)
 		points_IDs = np.genfromtxt(full_path,delimiter=' ',dtype='int', usecols=(1,2,3,4))
 		points_ID_elem = np.genfromtxt(full_path,delimiter=' ',dtype='int', usecols=(0))
-#		points_ID_elem=points_ID_elem-number_elements_2D
 		points_ID_elem=points_ID_elem-number_elements_2D
 		points_ID_elem=points_ID_elem.tolist()
 
@@ -357,7 +357,7 @@ def integration_process(folder_path,preProcData):
 			source=0
 			for each_integ_point in xrange(number_integ_points):
 				if run_biot_savart or run_permanent_magnets:
-					Hxy=field_solution[elem_counter][each_integ_point]*k_sf
+					Hxy=field_solution[elem_counter][each_integ_point]
 					if Hxy[0,0]!=0 or Hxy[1,0]!=0 or Hxy[2,0]!=0:
 
 						w_1_this_point=w_1[each_integ_point]
@@ -431,6 +431,7 @@ def integration_process(folder_path,preProcData):
 							   each_coupling.Face_ID_List.append(counter)
 
 #%% Insert the flux sources
+
 	BC_nodes=list()
 	if run_surface_integral:
 		folder_name=os.path.join(folder_path,results_folder)
@@ -439,7 +440,7 @@ def integration_process(folder_path,preProcData):
 		flux_source =flux_data[:,1]
 		flux_source_elem_ID=flux_data[:,0]
 		num_faces_surface_integral=len(flux_source_elem_ID)
-		external_node_surface_ID_counter=0
+#		external_node_surface_ID_counter=0
 
 		for face_counter in xrange(num_faces_surface_integral):
 			this_elem_face_ID=int(flux_source_elem_ID[face_counter])
