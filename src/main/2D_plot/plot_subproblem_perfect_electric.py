@@ -10,7 +10,7 @@ mu0=4*math.pi*pow(10,-7)
 
 plt.rc('font',family='Times New Roman')
 plt.close("all")
-axis_font = { 'size':'28'}
+axis_font = { 'size':'24'}
 #savepath=r"C:\Anderson\Pessoal\01_Doutorado\08_Relatorios_Papers\4_CEFC_2016\Four_pages\Figures"
 
 data=r"C:\Anderson\Pessoal\01_Doutorado\10_Testes\35_Subdomain_Dular_2009_electric\GetDP_3D\bLine.dat"
@@ -62,16 +62,17 @@ for counter in xrange(len(x_FEM)):
 #Plots
 plt.figure(1)
 plt.plot(x_FEM, B_FEM_y,label='FEM',color="black",lw=3,linestyle='-',alpha=0.5)
-plt.plot(x_FEM, B_comp_y,label='$\mathbf{B}_2$',color="red",lw=3,linestyle='-',alpha=0.5)
+
 #plt.plot((x_FEM), B_VS_y,label='$\mathbf{B}_2$',color="blue",linestyle='--',lw=4,alpha=0.5)
-plt.plot((x_FEM), B_BS_y,label='$\mathbf{B}_1$: BS',color="blue",linestyle='-',lw=3)
-plt.plot((x_FEM), B_comp_y+B_BS_y,label='$\mathbf{B}_1+\mathbf{B}_2$',color="black",linestyle='-.',lw=4,alpha=1)
+plt.plot((x_FEM), B_BS_y,label='$B_p$: BS',color="blue",linestyle='-',lw=3,alpha=0.5)
+#plt.plot(x_FEM, B_comp_y,label='$B_q$',color="red",lw=1,linestyle='-')
+plt.plot((x_FEM), B_comp_y+B_BS_y,label='$B_p+B_q$',color="black",linestyle='--',lw=3,alpha=1)
 #plt.plot((x_FEM), B_VS_corry+B_BS_y,label='$\mathbf{B}_1+\mathbf{B}_2\,corrected$',color="red",linestyle='-.',lw=4,alpha=1)
 
 
 plt.xlabel('Position along the device [m]',**axis_font)
 plt.ylabel('By [T]',**axis_font)
-legend = plt.legend(fontsize='20')
+legend = plt.legend(fontsize='24',loc=3)
 frame = legend.get_frame()
 frame.set_facecolor('0.90')
 plt.xlim(xmax=0.15)

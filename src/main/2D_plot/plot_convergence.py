@@ -34,26 +34,29 @@ elements=[
 14482]
 
 
-converged_FEM=[20.8514003979938,
-20.8514003979938,
-20.8514003979938,
-20.8514003979938,
-20.8514003979938,
-20.8514003979938,
-20.8514003979938]
+converged_FEM=20.8514003979938
+
+
 
 #Plots
 plt.rc('font',family='Times New Roman')
 plt.close("all")
 axis_font = { 'size':'20'}
 
+error_FEM=list()
+error_FFEM=list()
+for counter,each in enumerate(FFEM):
+	error_FEM.append( 100*abs(FEM[counter]-converged_FEM)/converged_FEM)
+	error_FFEM.append( 100*abs(FFEM[counter]-converged_FEM)/converged_FEM)
+
+
 plt.figure(1)
-plt.plot(elements, FEM,label='FEM (A-Formulation)',color="black",linestyle='-',lw=3,alpha=0.5)
-plt.plot(elements, FFEM,label='FFEM (B-Formulation)',color="black",linestyle='--',lw=3,alpha=1)
-plt.plot(elements, converged_FEM,label='FEM (Converged)',color="black",linestyle='-.',lw=3,alpha=1)
+plt.semilogy(elements, error_FEM,label='FEM (A-Formulation)',color="black",linestyle='-',lw=3,alpha=0.5)
+plt.semilogy(elements, error_FFEM,label='FFEM (B-Formulation)',color="black",linestyle='--',lw=3,alpha=1)
+#plt.plot(elements, converged_FEM,label='FEM (Converged)',color="black",linestyle='-.',lw=3,alpha=1)
 
 plt.xlabel('Number of elements',**axis_font)
-plt.ylabel('Magnetic energy [Joules]',**axis_font)
+plt.ylabel('Convergence [%]',**axis_font)
 legend = plt.legend(fontsize='20',loc=0)
 plt.tick_params(axis='x', labelsize=20)
 frame = legend.get_frame()

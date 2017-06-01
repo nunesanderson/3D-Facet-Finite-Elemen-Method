@@ -13,8 +13,8 @@ from lib.constants import Vacuum,GlobalVariables
 from lib.error import Errors
 from lib.messages import print_message
 from read_write_TXT_files import write_numeric_data_file,write_numeric_file_numpy,write_numeric_file_sparse_csr
-from scipy import sparse,linalg
 import scipy
+from scipy import sparse,linalg
 from scipy.sparse import csr_matrix
 import scipy.sparse.linalg as splinalg
 from lib  import matrix_aux
@@ -86,10 +86,12 @@ def integration_process(folder_path,preProcData):
 	results_path=os.path.join(folder_path,results_folder)
 
 #	Source field
-	run_surface_integral=False
+	mu0=4.0*math.pi*math.pow(10.0,-7.0)
+	run_surface_integral=True
 	run_biot_savart=True
 	run_VS=False
-
+	perf_mag_surf=177
+	one_layer_ID=175
 #%% Instances and geral definitions
 	global_variables=GlobalVariables()
 	error=Errors()
@@ -112,6 +114,7 @@ def integration_process(folder_path,preProcData):
 	external_reluctances=preProcData.ExternalReluctances
 	coupling=preProcData.CoupNet
 
+
 	#------------------------------------------------------------------------------
 	# Mesh
 	mesh_data=preProcData.MeshData
@@ -127,12 +130,17 @@ def integration_process(folder_path,preProcData):
 	elem_tags_3D=list()
 	region_ID_list_3D=list()
 	number_elements_2D=0
+	nodes_phys_surf=list()
 
 	for counter,each_elem in enumerate(all_elem_nodes_3D):
 		this_elem_type=elem_type[counter]
 		if this_elem_type<4:
 			elem_2D_ID.append(counter)
 			number_elements_2D+=1
+			if elem_tags[counter][0]==perf_mag_surf:
+				for each in all_elem_nodes_3D[counter]:
+					if each not in nodes_phys_surf:
+						nodes_phys_surf.append(each)
 		else:
 			elem_nodes_3D.append(each_elem)
 			elem_type_3D.append(elem_type[counter])
@@ -146,12 +154,15 @@ def integration_process(folder_path,preProcData):
 			if not find:
 			   error.physical_surface_not_defined(str(each_region.RegionNumber),elem_tags[counter][0])
 
-	number_elements=len(elem_nodes_3D)
+	number_elements=len(elem_nodes_3D) #only 3D elements
 	number_nodes=len(nodes_coordenates)
 	faces_ID=list()
 	faces_list=list()
+#	nodes_phys_surf=set(nodes_phys_surf)
+	plot_field=list()
+	plot_shape_functions=list()
 	plot_test_coord=list()
-	plot_test_field=list()
+
 
 
 	#%%Get source field
@@ -194,13 +205,11 @@ def integration_process(folder_path,preProcData):
 
 		full_path=os.path.join(folder_name,this_file_name)
 		fields = np.genfromtxt(full_path,delimiter=' ',dtype='double')
-
 		for elem_counter in range(0,number_elements):
 			this_elem_type=elem_type_3D[elem_counter]
 			gauss_points=get_gauss_points_class.get_gauss_points(this_elem_type)
 			number_integ_points=len(get_gauss_points_class.get_gauss_points(this_elem_type))
 			this_points_field=list()
-
 			if elem_counter in points_ID_elem:
 
 				this_elem=points_ID_elem.index(elem_counter)
@@ -209,6 +218,8 @@ def integration_process(folder_path,preProcData):
 					Hxy[0,0]=fields[k,0]
 					Hxy[1,0]=fields[k,1]
 					Hxy[2,0]=fields[k,2]
+
+
 					this_points_field.append(Hxy)
 
 			else:
@@ -253,6 +264,8 @@ def integration_process(folder_path,preProcData):
 	cols_rel_sparse=list()
 	rows_rel_sparse=list()
 
+	counter_elem_suf=0
+
 #reluctance matrix
 	diagonal=list()
 	for each_element_faces in faces_ID:
@@ -291,12 +304,6 @@ def integration_process(folder_path,preProcData):
 #	grad_phi_sparse=csr_matrix((data_grad_phi_sparse, (rows_grad_phi_sparse, cols_grad_phi_sparse)), shape=(num_total_rel,1))
 
 	this_elem_type=""
-	plot_field=list()
-	plot_shape_functions=list()
-#	plot_test_coord=list()
-	BC_nodes=list()
-	BC_values=list()
-
 	for elem_counter in xrange(number_elements):
 		this_elem_type_changed=elem_type_3D[elem_counter]
 		if this_elem_type!=this_elem_type_changed:
@@ -310,8 +317,13 @@ def integration_process(folder_path,preProcData):
 		this_element_nodes=elem_nodes_3D[elem_counter]
 		mur_r=materials_lib[region_ID_list_3D[elem_counter]].Permeability
 		mu_elem=vacuum.mu0*mur_r
-#		x=nodes_coordenates[this_element_nodes[0]][1]
 
+		k_sf=1.0
+		if run_VS:
+			if mur_r>1.0:
+				k_sf=-1.0*mu0*((1.0/mu_elem)-(1.0/mu0))
+			else:
+				k_sf=0
 
 
 # Get W at reference element
@@ -330,12 +342,6 @@ def integration_process(folder_path,preProcData):
 # Shape functions @ real element for each face
 		w_real_all_points=list() # w_real_lista[0] contains  the shape function of all points for face 0
 
-#Boundary conditions
-#		Hxy=field_solution[elem_counter][each_integ_point]
-#		if Hxy[0,0]!=0 or Hxy[1,0]!=0 or Hxy[2,0]!=0:
-#			BC_nodes.append(elem_counter)
-#			BC_values.append(x)
-
 #   Face 0...Fn
 #P0  W
 #Pn
@@ -349,6 +355,7 @@ def integration_process(folder_path,preProcData):
 			w_real_all_points.append(w_real_this_point)
 
 # Source fields
+		elem_ID_all=elem_counter+number_elements_2D
 		for local_face_counter in xrange(number_local_faces):
 
 			w_1=copy.deepcopy(w_real_all_points[local_face_counter])
@@ -358,53 +365,92 @@ def integration_process(folder_path,preProcData):
 				for each in w_1:
 					each=matrix_aux.invert_w(each)
 
-			elem_ID_all=elem_counter+number_elements_2D
-
-
-
-
-#			this_3D_ID=points_ID_elem_all.index(elem_ID_all)
 # mmf source integration process
-			source=0
-			this_face_nodes=faces_list[face_ID_1].nodes_list
-#
-#
-			this_elem=points_ID_elem.index(elem_counter)
-			this_gauss_points_ID=points_IDs[this_elem].tolist()
 
-			Hxy=np.zeros((3,1))
-			for each_integ_point in xrange(number_integ_points):
-				if run_biot_savart or run_permanent_magnets:
-#					Hxy=field_solution[elem_counter][each_integ_point]
-					this_point_ID=this_gauss_points_ID[each_integ_point]
-					Hxy[0,0]=fields[this_point_ID,0]
-					Hxy[1,0]=fields[this_point_ID,1]
-					Hxy[2,0]=fields[this_point_ID,2]
+#			if (52 in faces_list[face_ID_1].nodes_list) and (118 in faces_list[face_ID_1].nodes_list) and (384 in faces_list[face_ID_1].nodes_list):
+#				faces_list[face_ID_1].print_face()
+#				run_this_face=True
 
-					if Hxy[0,0]!=0 or Hxy[1,0]!=0 or Hxy[2,0]!=0:
 
-						w_1_this_point=w_1[each_integ_point]
+			counter_nodes=0
+			for each in faces_list[face_ID_1].nodes_list:
+				if  each in nodes_phys_surf:
+					counter_nodes=counter_nodes+1
+#					run_this_face=False
+			run_this_face=False
 
+			if  elem_counter in points_ID_elem:
+				run_this_face=True
+
+
+#			if (50 in faces_list[face_ID_1].nodes_list) and (120 in faces_list[face_ID_1].nodes_list):
+#				run_this_face=True
+#				faces_list[face_ID_1].print_face()
+##					print(faces_list[face_ID_1].nodes_list)
+
+			if run_this_face:
+
+#Gets the ID of the element
+				this_3D_ID=points_ID_elem_all.index(elem_ID_all)
+#				print(this_3D_ID)
+				this_face_nodes=faces_list[face_ID_1].nodes_list
+#				faces_list[face_ID_1].print_face()
+
+
+				source=0
+				for each_integ_point in xrange(number_integ_points):
+
+#					this_Gauss_point_ID=points_IDs[this_3D_ID][each_integ_point]
+
+#					if run_biot_savart or run_permanent_magnets:
+					Hxy=np.zeros((3,1))
+					this_gauss_point_ID=points_IDs[this_3D_ID][each_integ_point]
+					Hxy[0,0]=fields[this_gauss_point_ID][0]
+					Hxy[1,0]=fields[this_gauss_point_ID][1]
+					Hxy[2,0]=fields[this_gauss_point_ID][2]
+
+
+#						Hxy=field_solution[elem_counter][each_integ_point]*k_sf
+
+					w_1_this_point=w_1[each_integ_point]
 #u,v,p coordinates
-						u=gauss_points[each_integ_point,0]
-						v=gauss_points[each_integ_point,1]
-						p=gauss_points[each_integ_point,2]
-						w=w_1_this_point
+					u=gauss_points[each_integ_point,0]
+					v=gauss_points[each_integ_point,1]
+					p=gauss_points[each_integ_point,2]
+					w=w_1_this_point
 
-
-						plot_shape_functions.append(w)
-
-						plot_test_field.append(Hxy)
-						plot_test_coord.append(coordinates[this_point_ID])
+# Normal vector
+					node1=this_face_nodes[0]
+					node2=this_face_nodes[1]
+					node3=this_face_nodes[2]
+					P_1=np.array([nodes_coordenates[node1][0],nodes_coordenates[node1][1],nodes_coordenates[node1][2]])
+					P_2=np.array([nodes_coordenates[node2][0],nodes_coordenates[node2][1],nodes_coordenates[node2][2]])
+					P_3=np.array([nodes_coordenates[node3][0],nodes_coordenates[node3][1],nodes_coordenates[node3][2]])
+					A=P_2-P_1
+					B=P_3-P_1
+					AxB=np.cross(A,B)
+					nor=linalg.norm(AxB)
+					n=AxB/nor
+					n=np.array([[n[0]],[n[1]],[n[2]]])
+#Shape funtions
+					vdotn=matrix_aux.dot_product(w,n)
+					w_n=n*vdotn
+					w_t=w-w_n
+					w=-w_n
+					plot_shape_functions.append(w)
+					plot_test_coord.append(coordinates[this_gauss_point_ID])
+#Source field
+					vdotn=matrix_aux.dot_product(Hxy,n)
+					Hxy_n=n*vdotn
+					plot_field.append(Hxy)
 # Jacobian
-						jac=operations.get_jacobian(this_elem_type,this_element_nodes,nodes_coordenates,u,v,p)
-						det_jac=np.linalg.det(jac)
-						abs_det_jac=np.abs(det_jac)
+					jac=operations.get_jacobian(this_elem_type,this_element_nodes,nodes_coordenates,u,v,p)
+					det_jac=np.linalg.det(jac)
+					abs_det_jac=np.abs(det_jac)
 #Integration
-						source=source+wtri*abs_det_jac*matrix_aux.dot_product(w,Hxy)
+					source=source+wtri*abs_det_jac*matrix_aux.dot_product(w,Hxy)
 
-
-			fmm_sparse[face_ID_1,0]=fmm_sparse[face_ID_1,0]+source
+				fmm_sparse[face_ID_1,0]=fmm_sparse[face_ID_1,0]+source
 
 # Relutances integration process
 			for local_face_counter_2 in xrange(number_local_faces):
@@ -460,7 +506,8 @@ def integration_process(folder_path,preProcData):
 							   each_coupling.Face_ID_List.append(counter)
 
 #%% Insert the flux sources
-#	BC_nodes=list()
+
+	BC_nodes=list()
 	if run_surface_integral:
 		folder_name=os.path.join(folder_path,results_folder)
 		full_path=os.path.join(folder_name,"flux_surface.txt")
@@ -468,7 +515,7 @@ def integration_process(folder_path,preProcData):
 		flux_source =flux_data[:,1]
 		flux_source_elem_ID=flux_data[:,0]
 		num_faces_surface_integral=len(flux_source_elem_ID)
-		external_node_surface_ID_counter=0
+#		external_node_surface_ID_counter=0
 
 		for face_counter in xrange(num_faces_surface_integral):
 			this_elem_face_ID=int(flux_source_elem_ID[face_counter])
@@ -489,7 +536,7 @@ def integration_process(folder_path,preProcData):
 #					print each_face.elem_1
 #					break
 
-#	BC_values=[0]*len(BC_nodes)
+	BC_values=[0]*len(BC_nodes)
 
 
 #%% Delete the faces without external connections
@@ -531,6 +578,7 @@ def integration_process(folder_path,preProcData):
 		faces_rel_spare[this_position,this_position]=reluctance_value
 		fmm_sparse[this_position]=external_reluctances[counter].fmm
 		source_flux_sparse[this_position]=external_reluctances[counter].flux
+
 
 	external_nodes_list=list()
 
@@ -583,25 +631,17 @@ def integration_process(folder_path,preProcData):
 		data_incidence_sparse.append(-1.0)
 
 	incidence_matrix_sparse=csr_matrix((data_incidence_sparse, (rows_incidence_sparse, cols_incidence_sparse)), shape=(total_nodes,number_faces_list))
-
 	print_message("Incidence matrix - Done")
+
 
 #%%Plot test fields
 	Gmsh_file_name="test_H_field.txt"
 	path=os.path.join(results_path,Gmsh_file_name)
-	Create_Vector_field(plot_test_coord,plot_test_field,path,"H test")
+	Create_Vector_field(plot_test_coord,plot_field,path,"H test")
 
 	Gmsh_file_name="test_W.txt"
 	path=os.path.join(results_path,Gmsh_file_name)
 	Create_Vector_field(plot_test_coord,plot_shape_functions,path,"Shape function")
-
-	print_message("Saving matrices")
-	np.save(os.path.join(results_path,"faces_rel_spare_algo"),faces_rel_spare.toarray())
-	np.save(os.path.join(results_path,"fmm_sparse_algol"),fmm_sparse.toarray())
-	np.save(os.path.join(results_path,"incidence_matrix_algo"),incidence_matrix_sparse.toarray())
-	print_message("Saving matrices: Done")
-
-
 
 	return faces_rel_spare,incidence_matrix_sparse,fmm_sparse,source_flux_sparse,faces_ID,results_path,faces_ID_deleted_list,faces_list,faces_deleted_list,BC_nodes,BC_values
 

@@ -517,7 +517,8 @@ class ShapeFuncions:
 		if elem_type==2:
 			number_faces=3
 		if elem_type==3:
-			number_faces=4
+			number_faces=3
+			print('using triangle')
 		elif elem_type==4:
 			number_faces=4
 		elif elem_type==5:

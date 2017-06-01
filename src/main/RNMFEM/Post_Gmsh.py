@@ -60,7 +60,7 @@ def interpolated_along_line(vol_phys_ID,xyz_list,pre_proc_data,results_path):
 			b_at_point=np.array([b_at_point[0,0],b_at_point[1,0],b_at_point[2,0]])
 			field.append(b_at_point)
 		else:
-			b_at_point=np.array([0,0,0])
+			b_at_point=np.array([0.0,0.0,0.0])
 			field.append(b_at_point)
 
 	Gmsh_file_name=file_names.get_B_Gmsh_line_file_name()
@@ -71,7 +71,7 @@ def interpolated_along_line(vol_phys_ID,xyz_list,pre_proc_data,results_path):
 	path=os.path.join(results_path,Gmsh_file_name)
 	write_numeric_file_numpy(path,field)
 
-def integrate_energy(pre_proc_data,vol_phys_ID,results_path):
+def integrate_energy(pre_proc_data,results_path):
 
 #Instances
 	operations=Operations()

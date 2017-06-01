@@ -68,7 +68,7 @@ class Face(object):
 		nodes_list_mesh=list()
 		for each in self.nodes_list:
 			nodes_list_mesh.append(each+1)
-		print "Nodes ist: %s - \tElement 1: %s - \tElement 2: %s"%(nodes_list_mesh,self.elem_1,self.elem_2)
+		print "Nodes list: %s - \tElement 1: %s - \tElement 2: %s"%(nodes_list_mesh,self.elem_1,self.elem_2)
 
 class File_names():
 

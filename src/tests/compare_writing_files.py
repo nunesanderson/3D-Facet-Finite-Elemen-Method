@@ -34,17 +34,6 @@ def run(n):
 	
 	return write_own_time,write_np_time
 
-#own=list()
-#np_=list()
-#n_range=np.arange(1,2000,500)
-#for each_n in n_range:
-#	write_own_time,write_np_time=run(each_n)
-#	own.append(write_own_time)
-#	np_.append(write_np_time)
-#
-#print("end")
-#
-
 teste=list()
 
 for cada in range(100):

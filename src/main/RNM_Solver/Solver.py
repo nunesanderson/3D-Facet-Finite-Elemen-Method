@@ -45,10 +45,10 @@ def __solve_nodal_circuit(Ac,Yb,E,J,BC_nodes,BC_values):
 	del(A)
 
 #Applies the boundaries conditions
-	for counter,each_BC_node in enumerate(BC_nodes):
-		Yn[each_BC_node,:]=0.0
-		Yn[each_BC_node,each_BC_node]=1.0
-		Jn[each_BC_node]=BC_values[counter]
+#	for counter,each_BC_node in enumerate(BC_nodes):
+#		Yn[each_BC_node,:]=0.0
+#		Yn[each_BC_node,each_BC_node]=1.0
+#		Jn[each_BC_node]=BC_values[counter]
 
 	vn=np.linalg.linalg.solve(Yn, Jn)
 	del(Yn)
